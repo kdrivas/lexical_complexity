@@ -9,7 +9,7 @@
 | biomed   	| 0.324377 	| 0.151944 	| 0.493693 	| 0.171375 	|
 | europarl 	| 0.286996 	| 0.108626 	| 0.382457 	| 0.113062 	|
 
-- The table below show the count per number of word occurence, is this table suggest the 0.8 of mae is a higher error? -> Look at the mean of std group
+- The table below show the count per number of word occurence, is this table suggest 0.8 of mae is a higher error? -> Look at the mean of std group
 
 | # Occurences 	| count 	| mean of mean group 	| mean of std group 	|
 |--------------	|-------	|--------------------	|-------------------	|
