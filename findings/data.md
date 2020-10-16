@@ -1,5 +1,5 @@
 ## Findings
-
+- There are 3 null values in token column
 - In the table below, I find Multi has more complexity than Single
 
 |          	| Single   	|          	| Multi    	|          	|
