@@ -19,7 +19,11 @@ class LexDataset(torch.utils.data.Dataset):
         return len(self.labels)
     
 def read_lexical_corpus(split_dir, return_complete_sent=False, window_size=3):
-    data = pd.read_csv(split_dir, sep='\t')
+    if 'tsv' in split_dir:
+        data = pd.read_csv(split_dir, sep='\t')
+    elif 'xlsx' in split_dir:
+        data = pd.read_excel(split_dir)
+        data.rename(columns={'subcorpus': 'corpus'}, inplace=True)
     data.token.fillna('null', inplace=True)
     
     texts = []
