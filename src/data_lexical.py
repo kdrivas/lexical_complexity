@@ -1,7 +1,23 @@
 from pathlib import Path
 import pandas as pd
+import pandarallel
 import numpy as np
 import torch
+
+import spacy
+
+def get_meta(sentence, ref, nlp, option):
+    try:
+        temp = []
+        doc = nlp(sentence)
+        for token in doc:
+            if option == 'pos':
+                temp.append(token.pos_)
+            else:
+                temp.append(token.text)
+        return temp        
+    except:
+        return []
 
 class LexDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels, positions):
@@ -18,7 +34,7 @@ class LexDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.labels)
     
-def read_lexical_corpus(split_dir, return_complete_sent=False, window_size=3):
+def read_lexical_corpus(split_dir, nlp=None, return_complete_sent=False, window_size=3):
     if 'tsv' in split_dir:
         data = pd.read_csv(split_dir, sep='\t')
     elif 'xlsx' in split_dir:
@@ -26,24 +42,30 @@ def read_lexical_corpus(split_dir, return_complete_sent=False, window_size=3):
         data.rename(columns={'subcorpus': 'corpus'}, inplace=True)
     data.token.fillna('null', inplace=True)
     
+    data['pos_label'] = data.apply(lambda x: get_meta(x.sentence, x.token, nlp, 'pos'), axis=1)
+    data['sentence_pre'] = data.apply(lambda x: get_meta(x.sentence, x.token, nlp, 'text'), axis=1)
+    
     texts = []
+    pos_tags = []
     labels = []
     sentence_raw = []
     target_words = []
     corpus = []
     positions = []
+    
     for ix, row in data.iterrows():
         try:
             if return_complete_sent:
-                texts.append(row.sentence)
+                texts.append(row.sentence_pre)
             else:
-                words = row.sentence.split(' ')
-                tokens = row.sentence.partition(row.token)
-                sentence = ' '.join(tokens[0].split(' ')[-window_size:]) + tokens[1] + ' '.join(tokens[2].split(' ')[:window_size])
+                position = row.sentence_pre.index(row.token)
+                sentence = ' '.join(row.sentence_pre[(position-window_size+1):position] + [row.sentence_pre[position]] +  row.sentence_pre[position:(position+window_size-1)])
+                tags = row.pos_label[(position-window_size+1):position] + [row.pos_label[position]] + row.pos_label[position:(position+window_size-1)]
+                pos_tags.append(tags)
                 texts.append(sentence)
             positions.append(len(tokens[0].split(' ')[-window_size:]))
             labels.append(row.complexity)
-            sentence_raw.append(row.sentence)
+            sentence_raw.append(row.sentence_pre)
             target_words.append(row.token)
             corpus.append(row.corpus)
         except:
@@ -51,4 +73,4 @@ def read_lexical_corpus(split_dir, return_complete_sent=False, window_size=3):
             print('word:', row.token)
             print()
 
-    return np.array(texts), np.array(corpus), np.array(labels), np.array(sentence_raw), np.array(target_words), np.array(positions)
+    return np.array(texts), np.array(corpus), np.array(labels), np.array(sentence_raw), np.array(target_words), np.array(positions), np.array(pos_tags)
