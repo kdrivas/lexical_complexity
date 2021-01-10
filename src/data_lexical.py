@@ -46,7 +46,8 @@ def read_lexical_corpus(split_dir, nlp=None, return_complete_sent=False, window_
     data['sentence_pre'] = data.apply(lambda x: get_meta(x.sentence, x.token, nlp, 'text'), axis=1)
     
     texts = []
-    pos_tags = []
+    pos_tag_targets = []
+    pos_tag_sentences = []
     labels = []
     sentence_raw = []
     target_words = []
@@ -64,16 +65,27 @@ def read_lexical_corpus(split_dir, nlp=None, return_complete_sent=False, window_
                     
         if return_complete_sent:
             texts.append(row.sentence_pre)
+            pos_word=4
         else:
-            sentence = ' '.join(row.sentence_pre[(position-window_size+1):position] + [row.sentence_pre[position]] +  row.sentence_pre[position:(position+window_size-1)])
+            lim_inf = position-window_size+1
+            if lim_inf < 0:
+                lim_inf = 0
+            sentence = ' '.join(row.sentence_pre[lim_inf:(position+window_size)])
             texts.append(sentence)
+            pos_word = len(row.sentence_pre[lim_inf:position]) + 1
             
-        tags = row.pos_label[(position-window_size+1):position] + [row.pos_label[position]] + row.pos_label[position:(position+window_size-1)] 
-        pos_tags.append(tags)
-        positions.append(position)
+            #tokens = row.sentence.partition(row.token)
+            #sentence = ' '.join(tokens[0].split(' ')[-window_size:]) + tokens[1] + ' '.join(tokens[2].split(' ')[:window_size])
+            #texts.append(sentence)
+            
+        tags = row.pos_label[lim_inf:(position+window_size)] 
+        pos_tag_targets.append(row.pos_label[position])
+        pos_tag_sentences.append(tags)
+        positions.append(pos_word)
+        #positions.append(len(tokens[0].split(' ')[-window_size:]))
         labels.append(row.complexity)
-        sentence_raw.append(row.sentence_pre)
+        sentence_raw.append(' '.join(row.sentence_pre))
         target_words.append(row.token)
         corpus.append(row.corpus)
 
-    return np.array(texts), np.array(corpus), np.array(labels), np.array(sentence_raw), np.array(target_words), np.array(positions), np.array(pos_tags)
+    return np.array(texts), np.array(corpus), np.array(labels), np.array(sentence_raw), np.array(target_words), np.array(positions), np.array(pos_tag_sentences), np.array(pos_tag_targets)
